@@ -99,6 +99,8 @@ class TagButtonManager:
                 selected_tags.append(tag)
         return selected_tags
     
+    # まだ呼び出しされていないメソッド
+    # ここでの実装は、全てのタグ選択を解除する
     def clear_selection(self):
         """全てのタグ選択を解除"""
         for var in self.check_vars.values():

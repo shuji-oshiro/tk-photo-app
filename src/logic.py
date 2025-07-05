@@ -34,7 +34,6 @@ def scan_tags(self):
     # 2. 新しいimage_tag_mapを構築
     self.image_tag_map = {}
     temp_tags = []
-    # none_tag_count = 0
     
     for fname in files:
         file_path = os.path.join(self.select_folder, fname)
@@ -58,9 +57,6 @@ def scan_tags(self):
         # タグ集計用の一時リストに追加
         temp_tags.extend(self.image_tag_map[fname]["tags"])
         
-        # # タグなしカウント
-        # if not self.image_tag_map[fname]["tags"]:
-        #     none_tag_count += 1
     
     # 3. タグ情報の集計
     tag_counter = collections.Counter(temp_tags)
