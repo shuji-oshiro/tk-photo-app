@@ -1,21 +1,15 @@
 import os
-import glob
 import json
-import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
-from PIL import Image, ImageTk
-from dotenv import load_dotenv
-import numpy as np
-from functools import partial
-from submenu import SubMenu  # サブメニューをインポート 
-import datetime
-from tkcalendar import DateEntry  # 追加
 import types
 import logic
-import constants  # 定数をインポート
+import datetime
+import tkinter as tk
+from tkinter import ttk, messagebox, filedialog
+from tkcalendar import DateEntry
+import constants
+from submenu import SubMenu 
 
 
-load_dotenv()
 
 class ThumbnailApp(tk.Tk):
 
@@ -175,7 +169,6 @@ class ThumbnailApp(tk.Tk):
             messagebox.showinfo(messagebox.INFO, "FROMの日付がTOの日付より新しい日付を選択してください")
             return
 
-        print("on_date_change","show_thumbnails")
         self.show_thumbnails()
 
 
@@ -200,7 +193,6 @@ class ThumbnailApp(tk.Tk):
 
         self.selected_tags = [tag for tag, var in self.check_vars.items() if var.get()]
         self.selected_items.clear()
-        print("on_tag_toggle","show_thumbnails")
         self.show_thumbnails()
  
 
@@ -216,7 +208,6 @@ class ThumbnailApp(tk.Tk):
             if new_size != self._last_size:
                 self._last_size = new_size
 
-                print("on_window_resize","show_thumbnails")
                 self.after_idle(self.show_thumbnails)
 
 
