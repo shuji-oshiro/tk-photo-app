@@ -7,7 +7,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from tkcalendar import DateEntry
 import constants
-from submenu import SubMenu 
+from update_tag_menu import SubMenu 
 from tag_button_manager import TagButtonManager
 from date_range_manager import DateRangeManager 
 
