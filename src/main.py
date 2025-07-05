@@ -2,10 +2,8 @@ import os
 import json
 import types
 import logic
-import datetime
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
-from tkcalendar import DateEntry
 import constants
 from update_tag_menu import SubMenu 
 from tag_button_manager import TagButtonManager
@@ -26,13 +24,15 @@ class ThumbnailApp(tk.Tk):
 
         self.all_tags = {} # タグ情報を管理するdict タグ名: タグの出現回数
         self.image_tag_map = {} # メディアファイルのタグ情報管理: Json対応
+        
+        # コンポーネント管理
+        self.tag_menu = None  # 新規タグ更新メニューの初期化
 
         self.thumbnails = []  # 参照保持用
         self.min_thumb_width = constants.THUMBNAIL_SIZE[0] + 20  # サムネイル1件分の最小幅（パディング込み）
         self.current_columns = 1  # 画面に表示されるカラム数　特に使用はしていない　
         self._last_size = (self.winfo_width(), self.winfo_height()) # ウィンドウサイズの初期値
         self.selected_items = set()  # 選択中のファイル
-        
 
         self._thumbnail_cache = {}  # サムネイルキャッシュ
         self.thumbnail_labels = {}  # サムネイルラベル保持
@@ -68,7 +68,6 @@ class ThumbnailApp(tk.Tk):
         self.tag_frame.bind("<Configure>",on_frame_configure)
 
         # logicメソッドのバインド
-        # self.scan_tags = types.MethodType(logic.scan_tags, self)
         self.get_video_thumbnail = types.MethodType(logic.get_video_thumbnail, self)
         self.show_thumbnails = types.MethodType(logic.show_thumbnails, self)
 
@@ -90,12 +89,7 @@ class ThumbnailApp(tk.Tk):
             on_date_change_callback=self.on_date_change
         )
 
-
-        # タグ編集メニューの初期化
-        self.tag_menu = None
-
         
-
         # サムネイル一覧（下部、縦スクロール）
         # 1. ラッパー用のフレームを作成
         thumb_area = tk.Frame(self)
@@ -321,6 +315,10 @@ def main():
     selectFolder = filedialog.askdirectory(
         title="画像・動画が含まれているフォルダを選択",
     )
+
+    
+
+
 
     if selectFolder:
         app = ThumbnailApp(selectFolder)
