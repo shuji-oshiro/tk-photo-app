@@ -14,12 +14,12 @@ from PIL import Image, ImageTk
 import constants  # 定数をインポート
 
 
-def scan_tags(self):
+def scan_tags(forlder_path):
     # フォルダ内の画像・動画ファイルをスキャンし、タグ情報を初期化・読み込みする
-    files = [f for f in os.listdir(self.select_folder) if os.path.splitext(f)[1].lower() in constants.VIDEO_AND_IMAGE_EXTS]
+    files = [f for f in os.listdir(forlder_path) if os.path.splitext(f)[1].lower() in constants.VIDEO_AND_IMAGE_EXTS]
 
     # タグマップファイルのパス
-    tags_json_path = os.path.join(self.select_folder, constants.PICTURE_TAGS_JSON)
+    tags_json_path = os.path.join(forlder_path, constants.PICTURE_TAGS_JSON)
     existing_tag_map = {}
     
     # 1. 既存のJSONファイルが存在する場合は読み込み
@@ -32,45 +32,47 @@ def scan_tags(self):
             existing_tag_map = {}
     
     # 2. 新しいimage_tag_mapを構築
-    self.image_tag_map = {}
+    image_tag_map = {}
     temp_tags = []
-    
+    all_tags = collections.Counter()  # タグ集計用のCounterオブジェクト
     for fname in files:
-        file_path = os.path.join(self.select_folder, fname)
+        file_path = os.path.join(forlder_path, fname)
         mtime = os.path.getmtime(file_path)
         mtime_str = datetime.datetime.fromtimestamp(mtime).strftime('%Y-%m-%d %H:%M:%S')
         
         # 既存のJSONにデータがある場合は既存のタグ情報を使用、ない場合は新規作成
         if fname in existing_tag_map:
             # 既存データの更新（日付は最新のファイル更新日時で更新、タグは既存を保持）
-            self.image_tag_map[fname] = {
+            image_tag_map[fname] = {
                 "createday": mtime_str, 
                 "tags": existing_tag_map[fname].get("tags", [])
             }
         else:
             # 新規データの作成
-            self.image_tag_map[fname] = {
+            image_tag_map[fname] = {
                 "createday": mtime_str, 
                 "tags": []
             }
         
         # タグ集計用の一時リストに追加
-        temp_tags.extend(self.image_tag_map[fname]["tags"])
+        temp_tags.extend(image_tag_map[fname]["tags"])
         
     
     # 3. タグ情報の集計
     tag_counter = collections.Counter(temp_tags)
     
     # 他のタグを追加更新
-    self.all_tags.update(tag_counter)
+    all_tags.update(tag_counter)
 
     # 4. 更新されたJSONファイルを保存
     try:
         with open(tags_json_path, "w", encoding="utf-8") as f:
-            json.dump(self.image_tag_map, f, ensure_ascii=False, indent=4)
+            json.dump(image_tag_map, f, ensure_ascii=False, indent=4)
     except Exception as e:
         print(f"{constants.PICTURE_TAGS_JSON} の保存に失敗: {e}")
 
+
+    return image_tag_map, all_tags
 
 
 # 画像・動画ファイルの1フレーム目をサムネイル画像（PIL.Image）として返す
@@ -107,14 +109,13 @@ def show_thumbnails(self):
 
     # df = df.reset_index(drop=False)
     # 選択中のタグがある場合は、そのタグを含むファイルをフィルタリング
-    if self.selected_tags == [constants.NONE_TAG_TEXT]:
+    if self.tag_button_manager.get_selected_tags() == [constants.NONE_TAG_TEXT]:
         df = df[df['tags'].apply(lambda x: len(x) == 0)]
 
-    elif self.selected_tags:
-        df = df[df['tags'].apply(lambda x: set(self.selected_tags).issubset(set(x)))]
- 
-   
-    # サムネイル表示の列数を計算    
+    elif self.tag_button_manager.get_selected_tags():
+        df = df[df['tags'].apply(lambda x: set(self.tag_button_manager.get_selected_tags()).issubset(set(x)))]
+
+    # サムネイル表示の列数を計算
     frame_width = self.winfo_width()
 
     columns = max(1, frame_width // self.min_thumb_width)
@@ -122,9 +123,9 @@ def show_thumbnails(self):
 
     # サムネイルが選択されている状態と選択されていない状態の表示スタイル
     style = ttk.Style()
-    style.configure("Selected.TLabel", background="#0066cc") # 選択中のサムネイルの背景色
-    style.configure("TLabel", background="#ffffff") # 選択中でないサムネイルの背景色
-    
+    style.configure("Selected.TLabel", background=constants.SELECTED_BACKGROUND_COLOR) # 選択中のサムネイルの背景色
+    style.configure("TLabel", background=constants.NORMAL_BACKGROUND_COLOR) # 選択中でないサムネイルの背景色
+
     idx = 0
     for file, row in df.iterrows():
         try:

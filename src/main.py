@@ -15,6 +15,7 @@ from date_range_manager import DateRangeManager
 
 class ThumbnailApp(tk.Tk):
 
+    # アプリケーションの初期化
     def __init__(self, folder_path=None):
         super().__init__()        
 
@@ -31,7 +32,7 @@ class ThumbnailApp(tk.Tk):
         self.current_columns = 1  # 画面に表示されるカラム数　特に使用はしていない　
         self._last_size = (self.winfo_width(), self.winfo_height()) # ウィンドウサイズの初期値
         self.selected_items = set()  # 選択中のファイル
-        self.selected_tags = []  # 選択中のタグ
+        
 
         self._thumbnail_cache = {}  # サムネイルキャッシュ
         self.thumbnail_labels = {}  # サムネイルラベル保持
@@ -67,9 +68,13 @@ class ThumbnailApp(tk.Tk):
         self.tag_frame.bind("<Configure>",on_frame_configure)
 
         # logicメソッドのバインド
-        self.scan_tags = types.MethodType(logic.scan_tags, self)
+        # self.scan_tags = types.MethodType(logic.scan_tags, self)
         self.get_video_thumbnail = types.MethodType(logic.get_video_thumbnail, self)
         self.show_thumbnails = types.MethodType(logic.show_thumbnails, self)
+
+
+        # メディアファイルのタグ情報とタグ一覧を取得
+        self.image_tag_map, self.all_tags = logic.scan_tags(self.select_folder)
 
         # タグボタン管理クラスの初期化
         self.tag_button_manager = TagButtonManager(
@@ -78,18 +83,18 @@ class ThumbnailApp(tk.Tk):
             on_tag_toggle_callback=self.on_tag_toggle
         )
 
-        # タグ編集メニューの初期化
-        self.tag_menu = None
-
-        self.scan_tags()
-        self.tag_button_manager.create_tag_buttons()  
-
         # 日付範囲管理クラスの初期化（画像データから自動で日付範囲を設定）
         self.date_range_manager = DateRangeManager(
             parent_frame=self,
             image_tag_map=self.image_tag_map,
             on_date_change_callback=self.on_date_change
         )
+
+
+        # タグ編集メニューの初期化
+        self.tag_menu = None
+
+        
 
         # サムネイル一覧（下部、縦スクロール）
         # 1. ラッパー用のフレームを作成
@@ -167,7 +172,7 @@ class ThumbnailApp(tk.Tk):
             # 他のタグが選択された場合、タグなしを解除
             self.tag_button_manager.set_tag_selection(constants.NONE_TAG_TEXT, False)
 
-        self.selected_tags = self.tag_button_manager.get_selected_tags()
+        
         self.selected_items.clear()
         self.show_thumbnails()
  
@@ -247,10 +252,10 @@ class ThumbnailApp(tk.Tk):
                     return
                 
                 self.selected_items.clear()
-                self.scan_tags()
+                logic.scan_tags(self.select_folder)  # タグマップを再読み込み
                 self.tag_button_manager.update_tag_counts(self.all_tags)
 
-                for tag in self.selected_tags:
+                for tag in self.tag_button_manager.get_selected_tags():
 
                     # タグが存在する場合は前の選択状態を維持する
                     if tag in self.tag_button_manager.check_vars:
@@ -258,7 +263,8 @@ class ThumbnailApp(tk.Tk):
 
                     # 写真タグの更新により、未使用のタグが存在する場合は選択を解除する
                     else:
-                        self.selected_tags.remove(tag)
+                        pass
+                        # self.selected_tags.remove(tag)
  
                 self.show_thumbnails()
                 self.canvas_thumb.yview_moveto(0)

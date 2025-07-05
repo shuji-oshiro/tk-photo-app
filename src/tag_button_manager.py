@@ -24,7 +24,8 @@ class TagButtonManager:
         self.all_tags = all_tags
         self.on_tag_toggle_callback = on_tag_toggle_callback
         self.check_vars = {}
-    
+        self.create_tag_buttons()
+
     def create_tag_buttons(self):
         """
         タグ一覧からトグルボタン（Checkbutton）を作成し、画面上部に並べる
