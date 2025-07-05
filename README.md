@@ -1,4 +1,4 @@
-# show_picture
+# tk-photo-app
 
 Python/Tkinter を用いた画像・動画サムネイルビューア
 指定フォルダ内のファイルを一覧表示し、タグによるフィルタや日付範囲の検索
