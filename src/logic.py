@@ -101,8 +101,7 @@ def show_thumbnails(self):
     df["createday"] = pd.to_datetime(df["createday"])
 
     # 日付範囲でファイルをフィルタリング
-    from_date = self.from_date_entry.get_date()
-    to_date = self.to_date_entry.get_date()
+    from_date, to_date = self.date_range_manager.get_date_range()
     
     df = df[(df["createday"].dt.date >= from_date) & (df["createday"].dt.date <= to_date)] 
 

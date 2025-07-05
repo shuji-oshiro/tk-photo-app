@@ -8,7 +8,8 @@ from tkinter import ttk, messagebox, filedialog
 from tkcalendar import DateEntry
 import constants
 from submenu import SubMenu 
-from tag_button_manager import TagButtonManager 
+from tag_button_manager import TagButtonManager
+from date_range_manager import DateRangeManager 
 
 
 
@@ -65,21 +66,30 @@ class ThumbnailApp(tk.Tk):
 
         self.tag_frame.bind("<Configure>",on_frame_configure)
 
+        # logicメソッドのバインド
+        self.scan_tags = types.MethodType(logic.scan_tags, self)
+        self.get_video_thumbnail = types.MethodType(logic.get_video_thumbnail, self)
+        self.show_thumbnails = types.MethodType(logic.show_thumbnails, self)
 
-        # 日付入力コントロール
-        self.date_frame = ttk.Frame(self)
-        self.date_frame.pack(side="top", fill="x", padx=10, pady=2)
-        ttk.Label(self.date_frame, text="抽出期間：").pack(side="left")
-        self.from_date_entry = DateEntry(self.date_frame, width=12, date_pattern='yyyy-mm-dd')
-        self.from_date_entry.pack(side="left", padx=(0, 0))
-        
-        self.from_date_entry.bind("<<DateEntrySelected>>", self.on_date_change)
-        self.from_date_entry.bind("<FocusOut>", self.on_date_change)
-        ttk.Label(self.date_frame, text="～").pack(side="left")
-        self.to_date_entry = DateEntry(self.date_frame, width=12, date_pattern='yyyy-mm-dd')
-        self.to_date_entry.pack(side="left")
-        self.to_date_entry.bind("<<DateEntrySelected>>", self.on_date_change)
-        self.to_date_entry.bind("<FocusOut>", self.on_date_change)
+        # タグボタン管理クラスの初期化
+        self.tag_button_manager = TagButtonManager(
+            tag_frame=self.tag_frame,
+            all_tags=self.all_tags,
+            on_tag_toggle_callback=self.on_tag_toggle
+        )
+
+        # タグ編集メニューの初期化
+        self.tag_menu = None
+
+        self.scan_tags()
+        self.tag_button_manager.create_tag_buttons()  
+
+        # 日付範囲管理クラスの初期化（画像データから自動で日付範囲を設定）
+        self.date_range_manager = DateRangeManager(
+            parent_frame=self,
+            image_tag_map=self.image_tag_map,
+            on_date_change_callback=self.on_date_change
+        )
 
         # サムネイル一覧（下部、縦スクロール）
         # 1. ラッパー用のフレームを作成
@@ -123,58 +133,18 @@ class ThumbnailApp(tk.Tk):
         self.canvas_thumb.bind_all("<Button-4>", self.on_mousewheel)    # Linux
         self.canvas_thumb.bind_all("<Button-5>", self.on_mousewheel)    # Linux
 
-        self.bind("<Configure>", self.on_window_resize)
-
-
-        self.scan_tags = types.MethodType(logic.scan_tags, self)
-        self.get_video_thumbnail = types.MethodType(logic.get_video_thumbnail, self)
-        self.show_thumbnails = types.MethodType(logic.show_thumbnails, self)
-
-        # タグボタン管理クラスの初期化
-        self.tag_button_manager = TagButtonManager(
-            tag_frame=self.tag_frame,
-            all_tags=self.all_tags,
-            on_tag_toggle_callback=self.on_tag_toggle
-        )
-
-        # タグ編集メニューの初期化
-        self.tag_menu = None
-
-        self.scan_tags()
-        self.tag_button_manager.create_tag_buttons()  
+        self.bind("<Configure>", self.on_window_resize)  
 
         # サイズ変更時に同様の処理が発生しているため、初期表示時は遅延実行しない
         # print("__init__","show_thumbnails")
         # self.after_idle(self.show_thumbnails)  # 初期表示時は遅延実行
 
-        # サムネイルのcreatedayから最小・最大日付を取得
-        createday_list = [
-            datetime.datetime.strptime(self.image_tag_map[f]["createday"], "%Y-%m-%d %H:%M:%S")
-            for f in self.image_tag_map
-            if "createday" in self.image_tag_map[f]
-        ]
-        if createday_list:
-            min_date = min(createday_list).date()
-            max_date = max(createday_list).date()
-        else:
-            today = datetime.date.today()
-            min_date = today
-            max_date = today
-        self.from_date_entry.set_date(min_date)
-        self.to_date_entry.set_date(max_date)
-
     # 日付変更イベントのバインド
-    def on_date_change(self, event=None):
+    def on_date_change(self):
         """
         日付が変更された時の処理
         選択された日付範囲に基づいてサムネイルを再表示
         """
-
-        if self.from_date_entry.get_date() > self.to_date_entry.get_date():
-            self.to_date_entry.set_date(self.from_date_entry.get_date())
-            messagebox.showinfo(messagebox.INFO, "FROMの日付がTOの日付より新しい日付を選択してください")
-            return
-
         self.show_thumbnails()
 
 
