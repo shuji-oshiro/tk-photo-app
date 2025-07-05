@@ -16,7 +16,7 @@ class SubMenu(tk.Toplevel):
         # タグ入力用のフレーム
         input_frame = tk.Frame(self)
         input_frame.pack(fill="x", padx=10, pady=5)
-        self.tag_entry = tk.Entry(input_frame,text="タグを入力してください")
+        self.tag_entry = tk.Entry(input_frame)
         self.tag_entry.pack(side="left", fill="x", expand=True)
 
         add_btn = tk.Button(input_frame, text="追加", command=self.add_tag)

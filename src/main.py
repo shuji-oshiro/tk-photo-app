@@ -69,13 +69,13 @@ class ThumbnailApp(tk.Tk):
         # 日付入力コントロール
         self.date_frame = ttk.Frame(self)
         self.date_frame.pack(side="top", fill="x", padx=10, pady=2)
-        ttk.Label(self.date_frame, text="FROM").pack(side="left")
+        ttk.Label(self.date_frame, text="抽出期間：").pack(side="left")
         self.from_date_entry = DateEntry(self.date_frame, width=12, date_pattern='yyyy-mm-dd')
-        self.from_date_entry.pack(side="left", padx=(0, 10))
+        self.from_date_entry.pack(side="left", padx=(0, 0))
         
         self.from_date_entry.bind("<<DateEntrySelected>>", self.on_date_change)
         self.from_date_entry.bind("<FocusOut>", self.on_date_change)
-        ttk.Label(self.date_frame, text="TO").pack(side="left")
+        ttk.Label(self.date_frame, text="～").pack(side="left")
         self.to_date_entry = DateEntry(self.date_frame, width=12, date_pattern='yyyy-mm-dd')
         self.to_date_entry.pack(side="left")
         self.to_date_entry.bind("<<DateEntrySelected>>", self.on_date_change)
