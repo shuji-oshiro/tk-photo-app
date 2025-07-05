@@ -1,14 +1,14 @@
 import os
 import json
-import types
 import logic
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
+
 import constants
 from update_tag_menu import SubMenu 
 from tag_button_manager import TagButtonManager
 from date_range_manager import DateRangeManager 
-
+from thumbnail_display_manager import ThumbnailDisplayManager 
 
 
 class ThumbnailApp(tk.Tk):
@@ -25,18 +25,10 @@ class ThumbnailApp(tk.Tk):
         self.all_tags = {} # タグ情報を管理するdict タグ名: タグの出現回数
         self.image_tag_map = {} # メディアファイルのタグ情報管理: Json対応
         
-        # コンポーネント管理
-        self.tag_menu = None  # 新規タグ更新メニューの初期化
-
-        self.thumbnails = []  # 参照保持用
-        self.min_thumb_width = constants.THUMBNAIL_SIZE[0] + 20  # サムネイル1件分の最小幅（パディング込み）
-        self.current_columns = 1  # 画面に表示されるカラム数　特に使用はしていない　
-        self._last_size = (self.winfo_width(), self.winfo_height()) # ウィンドウサイズの初期値
-        self.selected_items = set()  # 選択中のファイル
-
+        # サムネイル表示関連
         self._thumbnail_cache = {}  # サムネイルキャッシュ
-        self.thumbnail_labels = {}  # サムネイルラベル保持
         self.scrollbar_visible = False
+        self._last_size = (self.winfo_width(), self.winfo_height()) # ウィンドウサイズの初期値
 
         # --- 横スクロール可能な tag_frame を作成 ---
         canvas_tags = tk.Canvas(self, height=30)
@@ -67,10 +59,8 @@ class ThumbnailApp(tk.Tk):
 
         self.tag_frame.bind("<Configure>",on_frame_configure)
 
-        # logicメソッドのバインド
-        self.get_video_thumbnail = types.MethodType(logic.get_video_thumbnail, self)
-        self.show_thumbnails = types.MethodType(logic.show_thumbnails, self)
-
+        # show_thumbnailsは新しいクラスで管理するため、ラッパーメソッドを作成
+        self.show_thumbnails = self._show_thumbnails_wrapper
 
         # メディアファイルのタグ情報とタグ一覧を取得
         self.image_tag_map, self.all_tags = logic.scan_tags(self.select_folder)
@@ -106,6 +96,16 @@ class ThumbnailApp(tk.Tk):
         self.image_frame = tk.Frame(self.canvas_thumb)
         self.canvas_thumb.create_window((0, 0), window=self.image_frame, anchor="nw")
 
+        # サムネイル表示管理クラスの初期化
+        self.thumbnail_display_manager = ThumbnailDisplayManager(
+            parent_frame=self.image_frame,
+            select_folder=self.select_folder,
+            thumbnail_cache=self._thumbnail_cache,
+            on_thumbnail_click_callback=self.on_thumbnail_click,
+            on_thumbnail_double_click_callback=self.open_with_default_app,
+            on_right_click_callback=self.on_main_frame_right_click
+        )
+
         # 2. canvasのサイズ変更時にスクロール範囲を更新する
         def on_image_frame_configure(event):
             # tag_frameのサイズ
@@ -138,6 +138,7 @@ class ThumbnailApp(tk.Tk):
         # print("__init__","show_thumbnails")
         # self.after_idle(self.show_thumbnails)  # 初期表示時は遅延実行
 
+
     # 日付変更イベントのバインド
     def on_date_change(self):
         """
@@ -167,7 +168,7 @@ class ThumbnailApp(tk.Tk):
             self.tag_button_manager.set_tag_selection(constants.NONE_TAG_TEXT, False)
 
         
-        self.selected_items.clear()
+        self.thumbnail_display_manager.clear_selection()
         self.show_thumbnails()
  
 
@@ -200,22 +201,17 @@ class ThumbnailApp(tk.Tk):
                 else:
                     self.canvas_thumb.yview_scroll(1, "units")
 
+
     # サムネイルクリック時の処理
     def on_thumbnail_click(self, event, path):
         """
         サムネイルがクリックされた時の処理
         - 選択状態を切り替え（選択/非選択）
         - 選択状態に応じてスタイルを変更
-        - 選択状態は self.selected_items で管理
+        - 選択状態は ThumbnailDisplayManager で管理
         """
-        if path in self.selected_items:
-            self.selected_items.remove(path)
-            style_name = "TLabel"
-        else:
-            self.selected_items.add(path)
-            style_name = "Selected.TLabel"
-        if path in self.thumbnail_labels:
-            self.thumbnail_labels[path].configure(style=style_name)
+        self.thumbnail_display_manager.toggle_selection(path)
+
 
     # タグ登録メニューが閉じたときの処理
     def on_tag_menu_close(self, update_tags=None):
@@ -229,8 +225,9 @@ class ThumbnailApp(tk.Tk):
           - メニューを閉じる
         """
         if update_tags:
-            if messagebox.askyesno(messagebox.YESNO, f"{update_tags}のタグで\n{len(self.selected_items)}件の選択した写真を更新しますか？"):
-                for fname in self.selected_items:
+            selected_items = self.thumbnail_display_manager.get_selected_items()
+            if messagebox.askyesno(messagebox.YESNO, f"{update_tags}のタグで\n{len(selected_items)}件の選択した写真を更新しますか？"):
+                for fname in selected_items:
                     self.image_tag_map[fname]["tags"] = update_tags
                 
                 try:
@@ -245,7 +242,7 @@ class ThumbnailApp(tk.Tk):
                     print(f"タグマップの保存に失敗しました: {e}")
                     return
                 
-                self.selected_items.clear()
+                self.thumbnail_display_manager.clear_selection()
                 self.image_tag_map, self.all_tags = logic.scan_tags(self.select_folder)  # タグマップを再読み込み
                 self.tag_button_manager.update_tag_counts(self.all_tags)
 
@@ -280,10 +277,7 @@ class ThumbnailApp(tk.Tk):
         """
         try:
             os.startfile(path)
-            self.selected_items.remove(file)
-            style_name = "TLabel"
-            if file in self.thumbnail_labels:
-                self.thumbnail_labels[file].configure(style=style_name)
+            self.thumbnail_display_manager.remove_from_selection(file)
         except Exception as e:
             print(f"{path} のオープンに失敗: {e}")
 
@@ -298,7 +292,8 @@ class ThumbnailApp(tk.Tk):
         - 選択されたファイルがない場合：
           - ファイルを選択するよう促すメッセージを表示
         """
-        if not self.selected_items:
+        selected_items = self.thumbnail_display_manager.get_selected_items()
+        if not selected_items:
             messagebox.showinfo(messagebox.INFO, "選択されているファイルがありません")
             return
 
@@ -308,6 +303,24 @@ class ThumbnailApp(tk.Tk):
         self.tag_menu.focus_set()
         self.tag_menu.protocol("WM_DELETE_WINDOW", self.on_tag_menu_close)
 
+
+    def _show_thumbnails_wrapper(self):
+        """
+        サムネイル表示のラッパーメソッド
+        ThumbnailDisplayManagerを使用してサムネイルを表示
+        """
+        selected_tags = self.tag_button_manager.get_selected_tags()
+        date_range = self.date_range_manager.get_date_range()
+        frame_width = self.winfo_width()
+        
+        self.thumbnail_display_manager.show_thumbnails(
+            image_tag_map=self.image_tag_map,
+            date_range=date_range,
+            selected_tags=selected_tags,
+            frame_width=frame_width
+        )
+
+
 # タグ編集メニューの選択状態を更新
 def main():
 
@@ -315,10 +328,6 @@ def main():
     selectFolder = filedialog.askdirectory(
         title="画像・動画が含まれているフォルダを選択",
     )
-
-
-
-
 
     if selectFolder:
         app = ThumbnailApp(selectFolder)
