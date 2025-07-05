@@ -8,6 +8,7 @@ from tkinter import ttk, messagebox, filedialog
 from tkcalendar import DateEntry
 import constants
 from submenu import SubMenu 
+from tag_button_manager import TagButtonManager 
 
 
 
@@ -24,7 +25,6 @@ class ThumbnailApp(tk.Tk):
         self.all_tags = {} # タグ情報を管理するdict タグ名: タグの出現回数
         self.image_tag_map = {} # メディアファイルのタグ情報管理: Json対応
 
-        self.check_vars = {}  # タグフレーム：上部ツールバーに表示されるタグチェックボックス: tk.BooleanVar
         self.thumbnails = []  # 参照保持用
         self.min_thumb_width = constants.THUMBNAIL_SIZE[0] + 20  # サムネイル1件分の最小幅（パディング込み）
         self.current_columns = 1  # 画面に表示されるカラム数　特に使用はしていない　
@@ -128,14 +128,20 @@ class ThumbnailApp(tk.Tk):
 
         self.scan_tags = types.MethodType(logic.scan_tags, self)
         self.get_video_thumbnail = types.MethodType(logic.get_video_thumbnail, self)
-        self.create_tag_buttons = types.MethodType(logic.create_tag_buttons, self)
         self.show_thumbnails = types.MethodType(logic.show_thumbnails, self)
+
+        # タグボタン管理クラスの初期化
+        self.tag_button_manager = TagButtonManager(
+            tag_frame=self.tag_frame,
+            all_tags=self.all_tags,
+            on_tag_toggle_callback=self.on_tag_toggle
+        )
 
         # タグ編集メニューの初期化
         self.tag_menu = None
 
         self.scan_tags()
-        self.create_tag_buttons()  
+        self.tag_button_manager.create_tag_buttons()  
 
         # サイズ変更時に同様の処理が発生しているため、初期表示時は遅延実行しない
         # print("__init__","show_thumbnails")
@@ -184,14 +190,14 @@ class ThumbnailApp(tk.Tk):
 
         if tag is None:
             # 他のタグを全て解除
-            for _tag in self.check_vars.keys():
+            for _tag in self.tag_button_manager.check_vars.keys():
                 if _tag != constants.NONE_TAG_TEXT:
-                    self.check_vars[_tag].set(False)
+                    self.tag_button_manager.set_tag_selection(_tag, False)
         else:
             # 他のタグが選択された場合、タグなしを解除
-            self.check_vars[constants.NONE_TAG_TEXT].set(False)
+            self.tag_button_manager.set_tag_selection(constants.NONE_TAG_TEXT, False)
 
-        self.selected_tags = [tag for tag, var in self.check_vars.items() if var.get()]
+        self.selected_tags = self.tag_button_manager.get_selected_tags()
         self.selected_items.clear()
         self.show_thumbnails()
  
@@ -272,13 +278,13 @@ class ThumbnailApp(tk.Tk):
                 
                 self.selected_items.clear()
                 self.scan_tags()
-                self.create_tag_buttons()
+                self.tag_button_manager.update_tag_counts(self.all_tags)
 
                 for tag in self.selected_tags:
 
                     # タグが存在する場合は前の選択状態を維持する
-                    if tag in self.check_vars:
-                        self.check_vars[tag].set(True)
+                    if tag in self.tag_button_manager.check_vars:
+                        self.tag_button_manager.set_tag_selection(tag, True)
 
                     # 写真タグの更新により、未使用のタグが存在する場合は選択を解除する
                     else:

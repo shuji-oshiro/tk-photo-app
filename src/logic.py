@@ -93,32 +93,6 @@ def get_video_thumbnail(self, filepath):
     return Image.new('RGB', constants.THUMBNAIL_SIZE, (128, 128, 128))
 
 
-# タグボタンを作成し、画面上部に配置するメソッド
-def create_tag_buttons(self):
-    # タグ一覧からトグルボタン（Checkbutton）を作成し、画面上部に並べる
-    # 既存のタグボタンを削除
-    for widget in self.tag_frame.winfo_children():
-        widget.destroy()
-
-    # タグフレームの初期化 
-    self.check_vars = {}
-    # タグフレームの最初の行に「タグなし」のボタンを配置
-    var = tk.BooleanVar()
-    btn = ttk.Checkbutton(self.tag_frame, text=constants.NONE_TAG_TEXT, variable=var, command=lambda : self.on_tag_toggle())
-    btn.grid(row=0, column=0, padx=5, pady=2, sticky="w")
-    self.check_vars[constants.NONE_TAG_TEXT] = var
-
-    col = 1
-    for tag, cnt in self.all_tags.items():
-        var = tk.BooleanVar()
-        btn = ttk.Checkbutton(self.tag_frame, text=f"{tag} ({cnt})", variable=var, command=lambda t=tag: self.on_tag_toggle(t))
-        btn.grid(row=0, column=col, padx=5, pady=2, sticky="w")
-        self.check_vars[tag] = var
-        col += 1
-
-    # タグフレームのレイアウトを更新し、ウィジェットの配置を確定させる
-    self.tag_frame.update_idletasks()
-
 
 def show_thumbnails(self):
     # 選択中のタグ・日付範囲でサムネイルをフィルタし、一覧表示する
@@ -211,7 +185,3 @@ def show_thumbnails(self):
         except Exception as e:
             print(f"{file} の読み込みに失敗: {e}")
 
-
-def update_thumbnail_view(self):
-    # サムネイル表示を更新する（タグ・日付などの条件で再描画）
-    self.show_thumbnails()
