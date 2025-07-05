@@ -246,7 +246,7 @@ class ThumbnailApp(tk.Tk):
                     return
                 
                 self.selected_items.clear()
-                logic.scan_tags(self.select_folder)  # タグマップを再読み込み
+                self.image_tag_map, self.all_tags = logic.scan_tags(self.select_folder)  # タグマップを再読み込み
                 self.tag_button_manager.update_tag_counts(self.all_tags)
 
                 for tag in self.tag_button_manager.get_selected_tags():
@@ -316,7 +316,7 @@ def main():
         title="画像・動画が含まれているフォルダを選択",
     )
 
-    
+
 
 
 
