@@ -17,7 +17,6 @@ MIN_THUMB_WIDTH = 148  # サムネイル1件分の最小幅（パディング込
 
 # UI設定
 WINDOW_SIZE = "900x700"
-WINDOW_TITLE = "画像・動画サムネイルビューア"
 
 # 色設定
 SELECTED_BACKGROUND_COLOR = "#0066cc"

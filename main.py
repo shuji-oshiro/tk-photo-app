@@ -24,21 +24,20 @@ class ThumbnailApp(tk.Tk):
 
         self.select_folder = folder_path
 
-        self.THUMBNAIL_SIZE = (128, 128)
-        self.VIDEO_EXTS = ('.mp4', '.mov', '.avi', '.mkv', '.wmv', '.flv')
-        self.VIDEO_AND_IMAGE_EXTS = ('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.mp4', '.mov', '.avi', '.mkv', '.wmv', '.flv')
         self.title("画像・動画サムネイルビューア")
         self.geometry("900x700")
 
         self.all_tags = {} # タグ情報を管理するdict タグ名: タグの出現回数
-        self.image_tag_map = {} # 画像ファイルパス: Json対応
-        self.check_vars = {}  # タグ: tk.BooleanVar
+        self.image_tag_map = {} # メディアファイルのタグ情報管理: Json対応
+
+        self.check_vars = {}  # タグフレーム：上部ツールバーに表示されるタグチェックボックス: tk.BooleanVar
         self.thumbnails = []  # 参照保持用
-        self.min_thumb_width = self.THUMBNAIL_SIZE[0] + 20  # サムネイル1件分の最小幅（パディング込み）
+        self.min_thumb_width = constants.THUMBNAIL_SIZE[0] + 20  # サムネイル1件分の最小幅（パディング込み）
         self.current_columns = 1  # 画面に表示されるカラム数　特に使用はしていない　
-        self._last_size = (self.winfo_width(), self.winfo_height())
+        self._last_size = (self.winfo_width(), self.winfo_height()) # ウィンドウサイズの初期値
         self.selected_items = set()  # 選択中のファイル
         self.selected_tags = []  # 選択中のタグ
+
         self._thumbnail_cache = {}  # サムネイルキャッシュ
         self.thumbnail_labels = {}  # サムネイルラベル保持
         self.scrollbar_visible = False
@@ -54,6 +53,7 @@ class ThumbnailApp(tk.Tk):
         
         canvas_tags.create_window((0, 0), window=self.tag_frame, anchor="nw")
 
+        # マウスホイールスクロール対応
         def on_frame_configure(event):
         # tag_frameのサイズ
             frame_width = self.tag_frame.winfo_reqwidth()
@@ -103,6 +103,7 @@ class ThumbnailApp(tk.Tk):
         self.image_frame = tk.Frame(self.canvas_thumb)
         self.canvas_thumb.create_window((0, 0), window=self.image_frame, anchor="nw")
 
+        # 2. canvasのサイズ変更時にスクロール範囲を更新する
         def on_image_frame_configure(event):
             # tag_frameのサイズ
             frame_height = self.image_frame.winfo_reqheight()
@@ -119,6 +120,7 @@ class ThumbnailApp(tk.Tk):
                 h_scroll_thumb.pack_forget()  # スクロールバーを非表示
                 self.scrollbar_visible = False
 
+        # スクロール範囲を更新
         self.image_frame.bind("<Configure>",on_image_frame_configure)
 
 
@@ -129,11 +131,14 @@ class ThumbnailApp(tk.Tk):
 
         self.bind("<Configure>", self.on_window_resize)
 
+
         self.scan_tags = types.MethodType(logic.scan_tags, self)
         self.get_video_thumbnail = types.MethodType(logic.get_video_thumbnail, self)
         self.create_tag_buttons = types.MethodType(logic.create_tag_buttons, self)
         self.show_thumbnails = types.MethodType(logic.show_thumbnails, self)
-        self.dummy_menu = None
+
+        # タグ編集メニューの初期化
+        self.tag_menu = None
 
         self.scan_tags()
         self.create_tag_buttons()  
@@ -158,6 +163,7 @@ class ThumbnailApp(tk.Tk):
         self.from_date_entry.set_date(min_date)
         self.to_date_entry.set_date(max_date)
 
+    # 日付変更イベントのバインド
     def on_date_change(self, event=None):
         """
         日付が変更された時の処理
@@ -173,6 +179,7 @@ class ThumbnailApp(tk.Tk):
         self.show_thumbnails()
 
 
+    # タグの選択状態が変更された時の処理
     def on_tag_toggle(self, tag=None):
         """
         タグの選択状態が変更された時の処理
@@ -197,6 +204,7 @@ class ThumbnailApp(tk.Tk):
         self.show_thumbnails()
  
 
+    # ウィンドウサイズが変更された時の処理
     def on_window_resize(self, event):
         """
         ウィンドウサイズが変更された時の処理
@@ -212,6 +220,7 @@ class ThumbnailApp(tk.Tk):
                 self.after_idle(self.show_thumbnails)
 
 
+    # マウスホイールのスクロール処理
     def on_mousewheel(self, event):
         # マウスホイールの上下方向のスクロール
         if self.scrollbar_visible:
@@ -242,8 +251,8 @@ class ThumbnailApp(tk.Tk):
         if path in self.thumbnail_labels:
             self.thumbnail_labels[path].configure(style=style_name)
 
-    # サブメニューが閉じたときの処理
-    def on_sub_menu_close(self, update_tags=None):
+    # タグ登録メニューが閉じたときの処理
+    def on_tag_menu_close(self, update_tags=None):
         """
         タグ編集メニューが閉じられた時の処理
         - タグの更新が選択された場合：
@@ -284,16 +293,14 @@ class ThumbnailApp(tk.Tk):
                     else:
                         self.selected_tags.remove(tag)
  
-
-                print("on_dummy_menu_close","show_thumbnails")
                 self.show_thumbnails()
                 self.canvas_thumb.yview_moveto(0)
             else:
                 messagebox.showinfo(messagebox.INFO, "更新はキャンセルされました")
                 return
 
-        if self.dummy_menu is not None:
-            self.dummy_menu.destroy()
+        if self.tag_menu is not None:
+            self.tag_menu.destroy()
 
 
     # 画像・動画をWindows標準アプリで開く
@@ -314,6 +321,7 @@ class ThumbnailApp(tk.Tk):
             print(f"{path} のオープンに失敗: {e}")
 
 
+    # メインフレームで右クリックされた時の処理
     def on_main_frame_right_click(self, event):
         """
         メインフレームで右クリックされた時の処理
@@ -327,13 +335,16 @@ class ThumbnailApp(tk.Tk):
             messagebox.showinfo(messagebox.INFO, "選択されているファイルがありません")
             return
 
-        self.dummy_menu = SubMenu(self, event.x_root, event.y_root, list(self.all_tags.keys()), self.on_sub_menu_close)
-        self.dummy_menu.transient(self)
-        self.dummy_menu.grab_set()
-        self.dummy_menu.focus_set()
-        self.dummy_menu.protocol("WM_DELETE_WINDOW", self.on_sub_menu_close)
+        self.tag_menu = SubMenu(self, event.x_root, event.y_root, list(self.all_tags.keys()), self.on_tag_menu_close)
+        self.tag_menu.transient(self)
+        self.tag_menu.grab_set()
+        self.tag_menu.focus_set()
+        self.tag_menu.protocol("WM_DELETE_WINDOW", self.on_tag_menu_close)
 
+# タグ編集メニューの選択状態を更新
 def main():
+
+    # フォルダ選択ダイアログを表示
     selectFolder = filedialog.askdirectory(
         title="画像・動画が含まれているフォルダを選択",
     )

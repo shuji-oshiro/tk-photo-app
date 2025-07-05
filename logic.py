@@ -16,7 +16,7 @@ import constants  # 定数をインポート
 
 def scan_tags(self):
     # フォルダ内の画像・動画ファイルをスキャンし、タグ情報を初期化・読み込みする
-    files = [f for f in os.listdir(self.select_folder) if os.path.splitext(f)[1].lower() in self.VIDEO_AND_IMAGE_EXTS]
+    files = [f for f in os.listdir(self.select_folder) if os.path.splitext(f)[1].lower() in constants.VIDEO_AND_IMAGE_EXTS]
 
     # タグマップファイルのパス
     tags_json_path = os.path.join(self.select_folder, constants.PICTURE_TAGS_JSON)
@@ -86,11 +86,11 @@ def get_video_thumbnail(self, filepath):
         if ret:
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             img = Image.fromarray(frame)
-            img.thumbnail(self.THUMBNAIL_SIZE)
+            img.thumbnail(constants.THUMBNAIL_SIZE)
             return img
     except Exception as e:
         print(f"{filepath} の動画サムネイル生成に失敗: {e}")
-    return Image.new('RGB', self.THUMBNAIL_SIZE, (128, 128, 128))
+    return Image.new('RGB', constants.THUMBNAIL_SIZE, (128, 128, 128))
 
 
 # タグボタンを作成し、画面上部に配置するメソッド
@@ -160,19 +160,19 @@ def show_thumbnails(self):
     for file, row in df.iterrows():
         try:
             # サムネイルキャッシュキーを生成
-            cache_key = f"{file}_{self.THUMBNAIL_SIZE[0]}_{self.THUMBNAIL_SIZE[1]}"
+            cache_key = f"{file}_{constants.THUMBNAIL_SIZE[0]}_{constants.THUMBNAIL_SIZE[1]}"
             file_path = os.path.join(self.select_folder, file)
 
             # サムネイルキャッシュがない場合は、サムネイルを生成
             if cache_key not in self._thumbnail_cache:
                 ext = os.path.splitext(file_path)[1].lower()
-                if ext in self.VIDEO_EXTS:
+                if ext in constants.VIDEO_EXTS:
                     # 動画の場合は、サムネイルを生成
                     img = self.get_video_thumbnail(file_path)
                 else:
                     # 画像の場合は、サムネイルを生成
                     img = Image.open(file_path)
-                    img.thumbnail(self.THUMBNAIL_SIZE)
+                    img.thumbnail(constants.THUMBNAIL_SIZE)
                 self._thumbnail_cache[cache_key] = img
 
             # サムネイルキャッシュがある場合は、キャッシュからサムネイルを取得
