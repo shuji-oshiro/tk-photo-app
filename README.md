@@ -9,7 +9,7 @@ Python/Tkinter を用いた画像・動画サムネイルビューア
 - 作成日による絞り込み（日付入力欄）
 
 ## セットアップ
-1. Python 3.11 以上を用意してください。
+1. Python 3.13 以上を用意してください。
 2. `pyproject.toml` の依存パッケージをインストールします。
    ```bash
    python -m venv .venv
@@ -21,7 +21,7 @@ Python/Tkinter を用いた画像・動画サムネイルビューア
 ## アプリ起動方法
 仮想環境を有効化した状態で下記コマンドを実行します。
 ```bash
-python main.py
+python src/main.py
 ```
 ## 操作方法
 - 任意のメディアファイルが含まれるフォルダを選択
@@ -33,13 +33,4 @@ python main.py
 - タグ選択や日付フィルタで、条件に合致したメディア情報がサムネイルで表示される
 - メディアファイルはダブルクリックで、既定のアプリによって起動可能
 
-## フォルダ構成
-```
-project/show_picture/
-├── main.py          # GUI アプリ本体
-├── logic.py         # タグ処理等のロジック
-├── dummyMenu.py     # タグ編集用の簡易メニュー
-├── image_tag_map.json  # タグ情報サンプル
-├── pyproject.toml   # 依存定義
-└── uv.lock          # ロックファイル
-```
+
