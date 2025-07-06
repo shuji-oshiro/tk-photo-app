@@ -152,21 +152,9 @@ class ThumbnailApp(tk.Tk):
     def on_tag_toggle(self, tag=None):
         """
         タグの選択状態が変更された時の処理
-        - タグなしと他のタグは排他的に動作
-        - タグなしが選択された場合、他のタグを全て解除
-        - 他のタグが選択された場合、タグなしを解除
-        - 選択状態に基づいてサムネイルを再表示
+        - 選択されたタグに基づいてサムネイルを再表示
+        - thumbnail_display_managerのshow_thumbnailsメソッドを呼び出す
         """
-
-        if tag is None:
-            # 他のタグを全て解除
-            for _tag in self.tag_button_manager.check_vars.keys():
-                if _tag != constants.NONE_TAG_TEXT:
-                    self.tag_button_manager.set_tag_selection(_tag, False)
-        else:
-            # 他のタグが選択された場合、タグなしを解除
-            self.tag_button_manager.set_tag_selection(constants.NONE_TAG_TEXT, False)
-
         
         self.thumbnail_display_manager.clear_selection()
         self.show_thumbnails()

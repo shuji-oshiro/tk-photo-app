@@ -79,11 +79,23 @@ class TagButtonManager:
     
     def _on_tag_toggle(self, tag=None):
         """
-        タグトグル時の内部処理
-        
-        Args:
-            tag: トグルされたタグ名（Noneの場合は「タグなし」）
+        タグの選択状態が変更された時の処理
+        - タグなしと他のタグは排他的に動作
+        - タグなしが選択された場合、他のタグを全て解除
+        - 他のタグが選択された場合、タグなしを解除
+        - コールバック関数を呼び出す
         """
+
+        if tag is None:
+            # 他のタグを全て解除
+            for _tag in self.check_vars.keys():
+                if _tag != constants.NONE_TAG_TEXT:
+                    self.set_tag_selection(_tag, False)
+        else:
+            # 他のタグが選択された場合、タグなしを解除
+            self.set_tag_selection(constants.NONE_TAG_TEXT, False)
+
+
         if self.on_tag_toggle_callback:
             self.on_tag_toggle_callback(tag)
     
