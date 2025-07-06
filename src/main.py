@@ -147,14 +147,14 @@ class ThumbnailApp(tk.Tk):
         self.tag_button_manager = TagButtonManager(
             tag_frame=self.tag_frame,
             all_tags=self.all_tags,
-            on_tag_toggle_callback=self.on_tag_toggle
+            on_tag_toggle_callback=self._show_thumbnails_wrapper
         )
 
         # 日付範囲管理クラスの初期化
         self.date_range_manager = DateRangeManager(
             parent_frame=self.data_frame,
             image_tag_map=self.image_tag_map,
-            on_date_change_callback=self.on_date_change
+            on_date_change_callback=self._show_thumbnails_wrapper
         )
 
         # サムネイル表示管理クラスの初期化
@@ -191,22 +191,6 @@ class ThumbnailApp(tk.Tk):
     # ===============================
     # イベントハンドラメソッド
     # ===============================
-
-    def on_date_change(self):
-        """
-        日付が変更された時の処理
-        選択された日付範囲に基づいてサムネイルを再表示
-        """
-        self.show_thumbnails()
-
-    def on_tag_toggle(self, tag=None):
-        """
-        タグの選択状態が変更された時の処理
-        - 選択されたタグに基づいてサムネイルを再表示
-        - thumbnail_display_managerのshow_thumbnailsメソッドを呼び出す
-        """
-        self.thumbnail_display_manager.clear_selection()
-        self.show_thumbnails()
 
     def _on_window_resize(self, event):
         """
@@ -275,7 +259,6 @@ class ThumbnailApp(tk.Tk):
                     return
                 
                 # UI更新処理
-                self.thumbnail_display_manager.clear_selection()
                 self.image_tag_map, self.all_tags = logic.scan_tags(self.select_folder)
                 self.tag_button_manager.update_tag_counts(self.all_tags)
 

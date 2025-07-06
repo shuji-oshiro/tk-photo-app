@@ -97,7 +97,8 @@ class TagButtonManager:
 
 
         if self.on_tag_toggle_callback:
-            self.on_tag_toggle_callback(tag)
+            # self.on_tag_toggle_callback(tag)
+            self.on_tag_toggle_callback()
     
     def get_selected_tags(self):
         """

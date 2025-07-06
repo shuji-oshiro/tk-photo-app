@@ -67,8 +67,12 @@ class ThumbnailDisplayManager:
             selected_tags: 選択されたタグリスト
             frame_width: フレームの幅
         """
+
+        # 既存の選択状態をクリア
+        self._clear_selection()
+
         # 既存のサムネイルをクリア
-        self.clear_thumbnails()
+        self._clear_thumbnails()
 
         # データフレーム作成
         df = pd.DataFrame(image_tag_map).T
@@ -93,12 +97,6 @@ class ThumbnailDisplayManager:
             self._create_thumbnail_widget(file, row, idx, columns)
             idx += 1
     
-    def clear_thumbnails(self):
-        """表示中のサムネイルを全てクリア"""
-        for widget in self.parent_frame.winfo_children():
-            widget.destroy()
-        self.thumbnails.clear()
-        self.thumbnail_labels.clear()
     
     def add_to_selection(self, file):
         """ファイルを選択状態に追加"""
@@ -109,11 +107,7 @@ class ThumbnailDisplayManager:
         """ファイルを選択状態から削除"""
         self.selected_items.discard(file)
         self._update_selection_style(file, False)
-    
-    def clear_selection(self):
-        """全ての選択状態をクリア"""
-        for file in list(self.selected_items):
-            self.remove_from_selection(file)
+
     
     def get_selected_items(self):
         """選択中のファイル一覧を取得"""
@@ -146,7 +140,19 @@ class ThumbnailDisplayManager:
     # ===============================
     # 内部メソッド（プライベート）
     # ===============================
-    
+        
+    def _clear_thumbnails(self):
+        """表示中のサムネイルを全てクリア"""
+        for widget in self.parent_frame.winfo_children():
+            widget.destroy()
+        self.thumbnails.clear()
+        self.thumbnail_labels.clear()
+
+    def _clear_selection(self):
+        """全ての選択状態をクリア"""
+        for file in list(self.selected_items):
+            self.remove_from_selection(file)
+
     def _calculate_columns(self, frame_width):
         """
         表示可能な列数を計算
