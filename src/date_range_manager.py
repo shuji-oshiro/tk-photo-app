@@ -25,9 +25,8 @@ class DateRangeManager:
         self.on_date_change_callback = on_date_change_callback
         self.image_tag_map = image_tag_map or {}
 
-        # 日付入力コントロールフレームを作成
-        self.date_frame = ttk.Frame(self.parent_frame)
-        self.date_frame.pack(side="top", fill="x", padx=10, pady=2)
+        # 親フレームを日付コントロールフレームとして直接使用
+        self.date_frame = self.parent_frame
         
         self._create_date_controls()
         
