@@ -7,6 +7,7 @@ import tkinter as tk
 from tkinter import ttk
 from PIL import Image, ImageTk
 import constants
+import logic
 from tkinter import messagebox
 
 
@@ -15,7 +16,9 @@ class ThumbnailDisplayManager:
     サムネイル表示と管理を行うクラス
     """
     
-    def __init__(self, parent_frame, select_folder, thumbnail_cache, 
+    def __init__(self, parent_frame, 
+                 select_folder, 
+                 thumbnail_cache, 
                  on_right_click_callback=None):
         """
         初期化
@@ -182,12 +185,20 @@ class ThumbnailDisplayManager:
             cache_key = f"{file}_{constants.THUMBNAIL_SIZE[0]}_{constants.THUMBNAIL_SIZE[1]}"
             file_path = os.path.join(self.select_folder, file)
 
-            # サムネイルキャッシュがない場合は、サムネイルを生成
-            if cache_key not in self.thumbnail_cache:
-                img = self._generate_thumbnail(file_path)
-                self.thumbnail_cache[cache_key] = img
-            else:
+            # まずメモリキャッシュから取得を試行（最高速）
+            if cache_key in self.thumbnail_cache:
                 img = self.thumbnail_cache[cache_key]
+            else:
+                # メモリキャッシュにない場合、JSONキャッシュから取得
+                img = logic.get_thumbnail_from_cache(row.to_dict() if hasattr(row, 'to_dict') else row)
+                
+                if img is None:
+                    # JSONキャッシュからの取得に失敗した場合のフォールバック
+                    print(f"警告: {file} のJSONキャッシュが見つかりません。新規生成します。")
+                    img = self._generate_thumbnail(file_path)
+                
+                # メモリキャッシュに保存して次回の高速化
+                self.thumbnail_cache[cache_key] = img
 
             # サムネイルを表示
             tk_img = ImageTk.PhotoImage(img)
@@ -198,7 +209,15 @@ class ThumbnailDisplayManager:
             style_name = "Selected.TLabel" if file in self.selected_items else "TLabel"
             
             # ファイル名と日付を表示
-            date_str = row.createday.strftime("%Y-%m-%d")
+            date_str = row.createday.strftime("%Y-%m-%d") if hasattr(row, 'createday') else row.get('createday', '')
+            if isinstance(date_str, str) and date_str:
+                try:
+                    from datetime import datetime
+                    date_obj = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
+                    date_str = date_obj.strftime("%Y-%m-%d")
+                except:
+                    date_str = date_str[:10]  # 最初の10文字（YYYY-MM-DD）を取得
+            
             lbl_text = f"{os.path.basename(file)}\n{date_str}"
             lbl = ttk.Label(thumb_frame, image=tk_img, text=lbl_text, compound="top", style=style_name)
             lbl.pack()

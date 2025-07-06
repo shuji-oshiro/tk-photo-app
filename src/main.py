@@ -49,6 +49,15 @@ class ThumbnailApp(tk.Tk):
     # 初期化・セットアップメソッド
     # ===============================
 
+    def _clear_ui(self):
+        """既存のUIコンポーネントをクリア"""
+        # すべての子ウィジェットを削除
+        for widget in self.winfo_children():
+            widget.destroy()
+        
+        # キャッシュやマネージャーの参照をクリア
+        self._thumbnail_cache.clear()
+
     def _setup_ui(self):
         """UIコンポーネントのセットアップ"""
         self._setup_tag_area()
@@ -58,7 +67,7 @@ class ThumbnailApp(tk.Tk):
     def _setup_tag_area(self):
         """タグエリアのセットアップ"""
         # 横スクロール可能な tag_frame を作成
-        canvas_tags = tk.Canvas(self, height=80)
+        canvas_tags = tk.Canvas(self, height=100)
         canvas_tags.pack(side="top", fill="x", padx=10, pady=5)
 
         # 横スクロールバーを作成
@@ -68,7 +77,13 @@ class ThumbnailApp(tk.Tk):
         inner_frame = tk.Frame(canvas_tags)
         canvas_tags.create_window(0, 0, window=inner_frame, anchor="nw")
 
+        
         # スクロール対象のフレームを Canvas に埋め込む
+        self.tag_filedialog = tk.Frame(inner_frame)
+        self.tag_filedialog.pack(fill="x", padx=10, pady=2)
+        btn = ttk.Button(self.tag_filedialog, text="フォルダ選択", command=lambda: self.show_select_folder())
+        btn.pack(side="left", padx=5, pady=2)
+
         self.tag_frame = tk.Frame(inner_frame)
         self.tag_frame.pack(fill="x", padx=10, pady=2)
 
@@ -276,6 +291,24 @@ class ThumbnailApp(tk.Tk):
         if self.tag_menu is not None:
             self.tag_menu.destroy()
             self.tag_menu = None
+
+
+    def show_select_folder(self):
+        """
+        フォルダ選択ダイアログを表示し、選択されたフォルダのパスを更新
+        """
+        select_folder = filedialog.askdirectory(
+            title="画像・動画が含まれているフォルダを選択",
+        )
+
+        if select_folder:
+            self.select_folder = select_folder
+            self._clear_ui()  # 既存のUIをクリア
+            self._setup_ui()
+            self._initialize_data()
+            self.show_thumbnails()
+        else:
+            pass  # フォルダが選択されなかった場合は何もしない
 
 
 def main():

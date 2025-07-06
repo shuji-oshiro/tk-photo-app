@@ -6,6 +6,11 @@ NONE_TAG_TEXT = "タグなし"
 # ファイル名
 PICTURE_TAGS_JSON = "image_tag_map.json"
 
+# サムネイルキャッシュ設定
+THUMBNAIL_CACHE_DIR = "thumbnail_cache"  # サムネイルキャッシュディレクトリ名
+THUMBNAIL_FORMAT = "JPEG"  # サムネイル保存形式
+THUMBNAIL_QUALITY = 85  # JPEG品質
+
 # ファイル拡張子
 VIDEO_EXTS = ('.mp4', '.mov', '.avi', '.mkv', '.wmv', '.flv')
 IMAGE_EXTS = ('.jpg', '.jpeg', '.png', '.bmp', '.gif')
