@@ -5,10 +5,10 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 
 import constants
-from update_tag_menu import SubMenu 
-from tag_button_manager import TagButtonManager
-from date_range_manager import DateRangeManager 
-from thumbnail_display_manager import ThumbnailDisplayManager 
+from components.update_tag_menu import SubMenu 
+from components.tag_button_manager import TagButtonManager
+from components.date_range_manager import DateRangeManager 
+from components.thumbnail_display_manager import ThumbnailDisplayManager 
 
 
 class ThumbnailApp(tk.Tk):
@@ -140,6 +140,9 @@ class ThumbnailApp(tk.Tk):
         # メディアファイルのタグ情報とタグ一覧を取得
         self.image_tag_map, self.all_tags = logic.scan_tags(self.select_folder)
 
+        if not self.image_tag_map:
+            messagebox.showinfo(messagebox.INFO, "選択されたフォルダには画像・動画が含まれていません。")
+        
         # タグボタン管理クラスの初期化
         self.tag_button_manager = TagButtonManager(
             tag_frame=self.tag_frame,
