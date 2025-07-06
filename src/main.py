@@ -101,8 +101,8 @@ class ThumbnailApp(tk.Tk):
             parent_frame=self.image_frame,
             select_folder=self.select_folder,
             thumbnail_cache=self._thumbnail_cache,
-            on_thumbnail_click_callback=self.on_thumbnail_click,
-            on_thumbnail_double_click_callback=self.open_with_default_app,
+            # on_thumbnail_click_callback=self.on_thumbnail_click,
+            # on_thumbnail_double_click_callback=self.open_with_default_app,
             on_right_click_callback=self.on_main_frame_right_click
         )
 
@@ -190,17 +190,6 @@ class ThumbnailApp(tk.Tk):
                     self.canvas_thumb.yview_scroll(1, "units")
 
 
-    # サムネイルクリック時の処理
-    def on_thumbnail_click(self, event, path):
-        """
-        サムネイルがクリックされた時の処理
-        - 選択状態を切り替え（選択/非選択）
-        - 選択状態に応じてスタイルを変更
-        - 選択状態は ThumbnailDisplayManager で管理
-        """
-        self.thumbnail_display_manager.toggle_selection(path)
-
-
     # タグ登録メニューが閉じたときの処理
     def on_tag_menu_close(self, update_tags=None):
         """
@@ -255,19 +244,7 @@ class ThumbnailApp(tk.Tk):
             self.tag_menu.destroy()
 
 
-    # 画像・動画をWindows標準アプリで開く
-    def open_with_default_app(self, event, path, file):
-        """
-        ファイルをデフォルトアプリケーションで開く処理
-        - 指定されたパスのファイルを開く
-        - ダブルクリック時はサムネイルの選択を解除
-        - エラー発生時はエラーメッセージを表示
-        """
-        try:
-            os.startfile(path)
-            self.thumbnail_display_manager.remove_from_selection(file)
-        except Exception as e:
-            print(f"{path} のオープンに失敗: {e}")
+
 
 
     # メインフレームで右クリックされた時の処理

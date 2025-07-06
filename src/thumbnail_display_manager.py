@@ -16,7 +16,6 @@ class ThumbnailDisplayManager:
     """
     
     def __init__(self, parent_frame, select_folder, thumbnail_cache, 
-                 on_thumbnail_click_callback=None, on_thumbnail_double_click_callback=None, 
                  on_right_click_callback=None):
         """
         初期化
@@ -25,8 +24,6 @@ class ThumbnailDisplayManager:
             parent_frame: サムネイルを表示するフレーム
             select_folder: 選択されたフォルダパス
             thumbnail_cache: サムネイルキャッシュ辞書
-            on_thumbnail_click_callback: サムネイルクリック時のコールバック
-            on_thumbnail_double_click_callback: サムネイルダブルクリック時のコールバック
             on_right_click_callback: 右クリック時のコールバック
         """
         self.parent_frame = parent_frame
@@ -34,8 +31,6 @@ class ThumbnailDisplayManager:
         self.thumbnail_cache = thumbnail_cache
         
         # コールバック関数
-        self.on_thumbnail_click_callback = on_thumbnail_click_callback
-        self.on_thumbnail_double_click_callback = on_thumbnail_double_click_callback
         self.on_right_click_callback = on_right_click_callback
         
         # 表示管理
@@ -173,15 +168,13 @@ class ThumbnailDisplayManager:
             file_path: ファイルパス
         """
         for widget in [thumb_frame, lbl]:
-            # ダブルクリック
-            if self.on_thumbnail_double_click_callback:
-                widget.bind("<Double-Button-1>", 
-                           lambda e, path=file_path, f=file, cb=self.on_thumbnail_double_click_callback: cb(e, path, f))
+            # ダブルクリック - 内部メソッドを直接呼び出し
+            widget.bind("<Double-Button-1>", 
+                       lambda e, path=file_path, f=file: self.open_with_default_app(e, path, f))
             
-            # クリック
-            if self.on_thumbnail_click_callback:
-                widget.bind("<Button-1>", 
-                           functools.partial(self.on_thumbnail_click_callback, path=file))
+            # クリック - 内部メソッドを直接呼び出し
+            widget.bind("<Button-1>", 
+                       lambda e, f=file: self.on_thumbnail_click(e, f))
             
             # 右クリック
             if self.on_right_click_callback:
@@ -264,3 +257,29 @@ class ThumbnailDisplayManager:
             self.remove_from_selection(file)
         else:
             self.add_to_selection(file)
+
+
+    # 画像・動画をWindows標準アプリで開く
+    def open_with_default_app(self, event, path, file):
+        """
+        ファイルをデフォルトアプリケーションで開く処理
+        - 指定されたパスのファイルを開く
+        - ダブルクリック時はサムネイルの選択を解除
+        - エラー発生時はエラーメッセージを表示
+        """
+        try:
+            os.startfile(path)
+            self.remove_from_selection(file)
+        except Exception as e:
+            print(f"{path} のオープンに失敗: {e}")
+
+
+    # サムネイルクリック時の処理
+    def on_thumbnail_click(self, event, file):
+        """
+        サムネイルがクリックされた時の処理
+        - 選択状態を切り替え（選択/非選択）
+        - 選択状態に応じてスタイルを変更
+        - 選択状態は ThumbnailDisplayManager で管理
+        """
+        self.toggle_selection(file)
